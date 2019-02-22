@@ -415,5 +415,6 @@ current_run -implementation [get_runs impl_1]
  # Generate the wrapper
  set design_name [get_bd_designs]
  make_wrapper -files [get_files $design_name.bd] -top -import
+set_property top design_1_wrapper [current_fileset]
 
 puts "INFO: Project created:$project_name"
