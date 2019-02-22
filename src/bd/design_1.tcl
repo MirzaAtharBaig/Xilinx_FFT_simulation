@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# counter_fft, datacapture
+# counter_fft
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -136,8 +136,8 @@ xilinx.com:ip:dds_compiler:6.0\
 xilinx.com:ip:ila:6.2\
 xilinx.com:ip:mult_gen:12.0\
 xilinx.com:ip:util_ds_buf:2.1\
+xilinx.com:ip:vio:3.0\
 xilinx.com:ip:xfft:9.0\
-xilinx.com:ip:xlconcat:2.1\
 xilinx.com:ip:xlconstant:1.1\
 xilinx.com:ip:xlslice:1.0\
 "
@@ -166,7 +166,6 @@ set bCheckModules 1
 if { $bCheckModules == 1 } {
    set list_check_mods "\ 
 counter_fft\
-datacapture\
 "
 
    set list_mods_missing ""
@@ -240,13 +239,15 @@ proc create_root_design { parentCell } {
   set c_addsub_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:c_addsub:12.0 c_addsub_0 ]
   set_property -dict [ list \
    CONFIG.A_Type {Signed} \
-   CONFIG.A_Width {16} \
+   CONFIG.A_Width {33} \
    CONFIG.B_Type {Signed} \
-   CONFIG.B_Value {0000000000000000} \
-   CONFIG.B_Width {16} \
+   CONFIG.B_Value {000000000000000000000000000000000} \
+   CONFIG.B_Width {33} \
    CONFIG.CE {false} \
-   CONFIG.Latency {1} \
-   CONFIG.Out_Width {16} \
+   CONFIG.C_In {false} \
+   CONFIG.Latency {3} \
+   CONFIG.Latency_Configuration {Automatic} \
+   CONFIG.Out_Width {34} \
  ] $c_addsub_0
 
   # Create instance: counter_fft_0, and set properties
@@ -260,38 +261,27 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: datacapture_0, and set properties
-  set block_name datacapture
-  set block_cell_name datacapture_0
-  if { [catch {set datacapture_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $datacapture_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
   # Create instance: dds_compiler_0, and set properties
   set dds_compiler_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:dds_compiler:6.0 dds_compiler_0 ]
   set_property -dict [ list \
    CONFIG.DATA_Has_TLAST {Not_Required} \
    CONFIG.DDS_Clock_Rate {200} \
    CONFIG.Frequency_Resolution {0.4} \
-   CONFIG.Has_Phase_Out {true} \
+   CONFIG.Has_Phase_Out {false} \
    CONFIG.Has_TREADY {true} \
-   CONFIG.Latency {5} \
+   CONFIG.Latency {13} \
    CONFIG.Latency_Configuration {Auto} \
    CONFIG.M_DATA_Has_TUSER {Not_Required} \
-   CONFIG.Noise_Shaping {Auto} \
+   CONFIG.Noise_Shaping {None} \
    CONFIG.OUTPUT_FORM {Twos_Complement} \
-   CONFIG.Output_Frequency1 {7.5} \
-   CONFIG.Output_Selection {Sine} \
-   CONFIG.Output_Width {8} \
-   CONFIG.PINC1 {1001100110011001100110011} \
-   CONFIG.Parameter_Entry {System_Parameters} \
+   CONFIG.Output_Frequency1 {0} \
+   CONFIG.Output_Selection {Sine_and_Cosine} \
+   CONFIG.Output_Width {16} \
+   CONFIG.PINC1 {0} \
+   CONFIG.Parameter_Entry {Hardware_Parameters} \
    CONFIG.PartsPresent {Phase_Generator_and_SIN_COS_LUT} \
-   CONFIG.Phase_Increment {Fixed} \
-   CONFIG.Phase_Width {29} \
+   CONFIG.Phase_Increment {Programmable} \
+   CONFIG.Phase_Width {32} \
    CONFIG.Phase_offset {None} \
    CONFIG.S_PHASE_Has_TUSER {Not_Required} \
  ] $dds_compiler_0
@@ -303,7 +293,7 @@ proc create_root_design { parentCell } {
    CONFIG.C_ENABLE_ILA_AXI_MON {false} \
    CONFIG.C_MONITOR_TYPE {Native} \
    CONFIG.C_NUM_OF_PROBES {3} \
-   CONFIG.C_PROBE0_WIDTH {8} \
+   CONFIG.C_PROBE0_WIDTH {32} \
  ] $ila_DDS
 
   # Create instance: ila_FFT, and set properties
@@ -314,28 +304,30 @@ proc create_root_design { parentCell } {
    CONFIG.C_MONITOR_TYPE {Native} \
    CONFIG.C_NUM_OF_PROBES {13} \
    CONFIG.C_PROBE12_WIDTH {16} \
-   CONFIG.C_PROBE8_WIDTH {16} \
+   CONFIG.C_PROBE8_WIDTH {32} \
    CONFIG.C_PROBE9_WIDTH {16} \
  ] $ila_FFT
 
   # Create instance: mult_gen_Img, and set properties
   set mult_gen_Img [ create_bd_cell -type ip -vlnv xilinx.com:ip:mult_gen:12.0 mult_gen_Img ]
   set_property -dict [ list \
-   CONFIG.OutputWidthHigh {15} \
+   CONFIG.OutputWidthHigh {32} \
    CONFIG.PortAType {Signed} \
-   CONFIG.PortAWidth {8} \
+   CONFIG.PortAWidth {16} \
    CONFIG.PortBType {Signed} \
-   CONFIG.PortBWidth {8} \
+   CONFIG.PortBWidth {16} \
+   CONFIG.Use_Custom_Output_Width {true} \
  ] $mult_gen_Img
 
   # Create instance: mult_gen_Real, and set properties
   set mult_gen_Real [ create_bd_cell -type ip -vlnv xilinx.com:ip:mult_gen:12.0 mult_gen_Real ]
   set_property -dict [ list \
-   CONFIG.OutputWidthHigh {15} \
+   CONFIG.OutputWidthHigh {32} \
    CONFIG.PortAType {Signed} \
-   CONFIG.PortAWidth {8} \
+   CONFIG.PortAWidth {16} \
    CONFIG.PortBType {Signed} \
-   CONFIG.PortBWidth {8} \
+   CONFIG.PortBWidth {16} \
+   CONFIG.Use_Custom_Output_Width {true} \
  ] $mult_gen_Real
 
   # Create instance: util_ds_buf_0, and set properties
@@ -345,12 +337,22 @@ proc create_root_design { parentCell } {
    CONFIG.USE_BOARD_FLOW {true} \
  ] $util_ds_buf_0
 
+  # Create instance: vio_0, and set properties
+  set vio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:vio:3.0 vio_0 ]
+  set_property -dict [ list \
+   CONFIG.C_EN_PROBE_IN_ACTIVITY {0} \
+   CONFIG.C_NUM_PROBE_IN {0} \
+   CONFIG.C_NUM_PROBE_OUT {1} \
+   CONFIG.C_PROBE_OUT0_WIDTH {32} \
+ ] $vio_0
+
   # Create instance: xfft_0, and set properties
   set xfft_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xfft:9.0 xfft_0 ]
   set_property -dict [ list \
+   CONFIG.cyclic_prefix_insertion {true} \
    CONFIG.data_format {fixed_point} \
    CONFIG.implementation_options {automatically_select} \
-   CONFIG.input_width {8} \
+   CONFIG.input_width {16} \
    CONFIG.number_of_stages_using_block_ram_for_data_and_phase_factors {7} \
    CONFIG.output_ordering {natural_order} \
    CONFIG.ovflo {false} \
@@ -361,20 +363,6 @@ proc create_root_design { parentCell } {
    CONFIG.transform_length {16384} \
    CONFIG.xk_index {true} \
  ] $xfft_0
-
-  # Create instance: xlconcat_0, and set properties
-  set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0 ]
-  set_property -dict [ list \
-   CONFIG.IN0_WIDTH {8} \
-   CONFIG.IN1_WIDTH {8} \
- ] $xlconcat_0
-
-  # Create instance: xlconstant_0, and set properties
-  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
-  set_property -dict [ list \
-   CONFIG.CONST_VAL {00000000} \
-   CONFIG.CONST_WIDTH {8} \
- ] $xlconstant_0
 
   # Create instance: xlconstant_1, and set properties
   set xlconstant_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_1 ]
@@ -400,19 +388,19 @@ proc create_root_design { parentCell } {
   # Create instance: xlslice_Img, and set properties
   set xlslice_Img [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_Img ]
   set_property -dict [ list \
-   CONFIG.DIN_FROM {15} \
-   CONFIG.DIN_TO {8} \
-   CONFIG.DIN_WIDTH {16} \
+   CONFIG.DIN_FROM {31} \
+   CONFIG.DIN_TO {16} \
+   CONFIG.DIN_WIDTH {32} \
    CONFIG.DOUT_WIDTH {8} \
  ] $xlslice_Img
 
   # Create instance: xlslice_Real, and set properties
   set xlslice_Real [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 xlslice_Real ]
   set_property -dict [ list \
-   CONFIG.DIN_FROM {7} \
+   CONFIG.DIN_FROM {15} \
    CONFIG.DIN_TO {0} \
-   CONFIG.DIN_WIDTH {16} \
-   CONFIG.DOUT_WIDTH {8} \
+   CONFIG.DIN_WIDTH {32} \
+   CONFIG.DOUT_WIDTH {16} \
  ] $xlslice_Real
 
   # Create interface connections
@@ -421,28 +409,27 @@ proc create_root_design { parentCell } {
   # Create port connections
   connect_bd_net -net c_addsub_0_S [get_bd_pins c_addsub_0/S] [get_bd_pins ila_FFT/probe12]
   connect_bd_net -net counter_fft_0_cntr_FFT_tlast [get_bd_pins counter_fft_0/cntr_FFT_tlast] [get_bd_pins xfft_0/s_axis_data_tlast]
-  connect_bd_net -net dds_compiler_0_m_axis_data_tdata [get_bd_pins datacapture_0/dds_compiler_0_m_axis_data_tdata] [get_bd_pins dds_compiler_0/m_axis_data_tdata] [get_bd_pins ila_DDS/probe0] [get_bd_pins xlconcat_0/In1]
+  connect_bd_net -net dds_compiler_0_m_axis_data_tdata [get_bd_pins dds_compiler_0/m_axis_data_tdata] [get_bd_pins ila_DDS/probe0] [get_bd_pins xfft_0/s_axis_data_tdata]
   connect_bd_net -net dds_compiler_0_m_axis_data_tvalid [get_bd_pins dds_compiler_0/m_axis_data_tvalid] [get_bd_pins ila_DDS/probe2] [get_bd_pins xfft_0/s_axis_data_tvalid]
+  connect_bd_net -net dds_compiler_0_s_axis_config_tready [get_bd_pins dds_compiler_0/s_axis_config_tready] [get_bd_pins dds_compiler_0/s_axis_config_tvalid]
   connect_bd_net -net mult_gen_Img_P [get_bd_pins c_addsub_0/B] [get_bd_pins mult_gen_Img/P]
   connect_bd_net -net mult_gen_Real_P [get_bd_pins c_addsub_0/A] [get_bd_pins mult_gen_Real/P]
-  connect_bd_net -net util_ds_buf_0_IBUF_OUT [get_bd_pins c_addsub_0/CLK] [get_bd_pins counter_fft_0/clk_cntr] [get_bd_pins datacapture_0/clk] [get_bd_pins dds_compiler_0/aclk] [get_bd_pins ila_DDS/clk] [get_bd_pins ila_FFT/clk] [get_bd_pins mult_gen_Img/CLK] [get_bd_pins mult_gen_Real/CLK] [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins xfft_0/aclk]
-  connect_bd_net -net xfft_0_event_data_in_channel_halt [get_bd_pins datacapture_0/xfft_0_event_data_in_channel_halt] [get_bd_pins ila_FFT/probe3] [get_bd_pins xfft_0/event_data_in_channel_halt]
-  connect_bd_net -net xfft_0_event_data_out_channel_halt [get_bd_pins datacapture_0/xfft_0_event_data_out_channel_halt] [get_bd_pins ila_FFT/probe2] [get_bd_pins xfft_0/event_data_out_channel_halt]
-  connect_bd_net -net xfft_0_event_frame_started [get_bd_pins datacapture_0/xfft_0_event_frame_started] [get_bd_pins ila_FFT/probe7] [get_bd_pins xfft_0/event_frame_started]
-  connect_bd_net -net xfft_0_event_status_channel_halt [get_bd_pins datacapture_0/xfft_0_event_status_channel_halt] [get_bd_pins ila_FFT/probe4] [get_bd_pins xfft_0/event_status_channel_halt]
-  connect_bd_net -net xfft_0_event_tlast_missing [get_bd_pins datacapture_0/xfft_0_event_tlast_missing] [get_bd_pins ila_FFT/probe5] [get_bd_pins xfft_0/event_tlast_missing]
-  connect_bd_net -net xfft_0_event_tlast_unexpected [get_bd_pins datacapture_0/xfft_0_event_tlast_unexpected] [get_bd_pins ila_FFT/probe6] [get_bd_pins xfft_0/event_tlast_unexpected]
-  connect_bd_net -net xfft_0_m_axis_data_tdata [get_bd_pins datacapture_0/m_axis_data_tdata] [get_bd_pins datacapture_0/xfft_0_m_axis_data_tdata] [get_bd_pins ila_FFT/probe8] [get_bd_pins xfft_0/m_axis_data_tdata] [get_bd_pins xlslice_Img/Din] [get_bd_pins xlslice_Real/Din]
-  connect_bd_net -net xfft_0_m_axis_data_tlast [get_bd_pins datacapture_0/xfft_0_m_axis_data_tlast] [get_bd_pins ila_FFT/probe11] [get_bd_pins xfft_0/m_axis_data_tlast]
-  connect_bd_net -net xfft_0_m_axis_data_tuser [get_bd_pins datacapture_0/xfft_0_m_axis_data_tuser] [get_bd_pins ila_FFT/probe9] [get_bd_pins xfft_0/m_axis_data_tuser]
-  connect_bd_net -net xfft_0_m_axis_data_tvalid [get_bd_pins datacapture_0/xfft_0_m_axis_data_tvalid] [get_bd_pins ila_FFT/probe10] [get_bd_pins xfft_0/m_axis_data_tvalid]
-  connect_bd_net -net xfft_0_s_axis_config_tready [get_bd_pins datacapture_0/xfft_0_s_axis_config_tready] [get_bd_pins ila_FFT/probe0] [get_bd_pins xfft_0/m_axis_data_tready] [get_bd_pins xfft_0/s_axis_config_tready]
-  connect_bd_net -net xfft_0_s_axis_data_tready [get_bd_pins datacapture_0/xfft_0_s_axis_data_tready] [get_bd_pins dds_compiler_0/m_axis_data_tready] [get_bd_pins ila_DDS/probe1] [get_bd_pins ila_FFT/probe1] [get_bd_pins xfft_0/s_axis_data_tready]
-  connect_bd_net -net xlconcat_0_dout [get_bd_pins xfft_0/s_axis_data_tdata] [get_bd_pins xlconcat_0/dout]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins xlconcat_0/In0] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net util_ds_buf_0_IBUF_OUT [get_bd_pins c_addsub_0/CLK] [get_bd_pins counter_fft_0/clk_cntr] [get_bd_pins dds_compiler_0/aclk] [get_bd_pins ila_DDS/clk] [get_bd_pins ila_FFT/clk] [get_bd_pins mult_gen_Img/CLK] [get_bd_pins mult_gen_Real/CLK] [get_bd_pins util_ds_buf_0/IBUF_OUT] [get_bd_pins vio_0/clk] [get_bd_pins xfft_0/aclk]
+  connect_bd_net -net vio_0_probe_out0 [get_bd_pins dds_compiler_0/s_axis_config_tdata] [get_bd_pins vio_0/probe_out0]
+  connect_bd_net -net xfft_0_event_data_in_channel_halt [get_bd_pins ila_FFT/probe3] [get_bd_pins xfft_0/event_data_in_channel_halt]
+  connect_bd_net -net xfft_0_event_data_out_channel_halt [get_bd_pins ila_FFT/probe2] [get_bd_pins xfft_0/event_data_out_channel_halt]
+  connect_bd_net -net xfft_0_event_frame_started [get_bd_pins ila_FFT/probe7] [get_bd_pins xfft_0/event_frame_started]
+  connect_bd_net -net xfft_0_event_status_channel_halt [get_bd_pins ila_FFT/probe4] [get_bd_pins xfft_0/event_status_channel_halt]
+  connect_bd_net -net xfft_0_event_tlast_missing [get_bd_pins ila_FFT/probe5] [get_bd_pins xfft_0/event_tlast_missing]
+  connect_bd_net -net xfft_0_event_tlast_unexpected [get_bd_pins ila_FFT/probe6] [get_bd_pins xfft_0/event_tlast_unexpected]
+  connect_bd_net -net xfft_0_m_axis_data_tdata [get_bd_pins ila_FFT/probe8] [get_bd_pins xfft_0/m_axis_data_tdata] [get_bd_pins xlslice_Img/Din] [get_bd_pins xlslice_Real/Din]
+  connect_bd_net -net xfft_0_m_axis_data_tlast [get_bd_pins ila_FFT/probe11] [get_bd_pins xfft_0/m_axis_data_tlast]
+  connect_bd_net -net xfft_0_m_axis_data_tuser [get_bd_pins ila_FFT/probe9] [get_bd_pins xfft_0/m_axis_data_tuser]
+  connect_bd_net -net xfft_0_m_axis_data_tvalid [get_bd_pins ila_FFT/probe10] [get_bd_pins xfft_0/m_axis_data_tvalid]
+  connect_bd_net -net xfft_0_s_axis_config_tready [get_bd_pins ila_FFT/probe0] [get_bd_pins xfft_0/m_axis_data_tready] [get_bd_pins xfft_0/s_axis_config_tready]
+  connect_bd_net -net xfft_0_s_axis_data_tready [get_bd_pins dds_compiler_0/m_axis_data_tready] [get_bd_pins ila_DDS/probe1] [get_bd_pins ila_FFT/probe1] [get_bd_pins xfft_0/s_axis_data_tready]
   connect_bd_net -net xlconstant_1_dout [get_bd_pins xfft_0/s_axis_config_tdata] [get_bd_pins xlconstant_1/dout]
   connect_bd_net -net xlconstant_2_dout [get_bd_pins xfft_0/s_axis_config_tvalid] [get_bd_pins xlconstant_2/dout]
-  connect_bd_net -net xlconstant_3_dout [get_bd_pins datacapture_0/clk_enable] [get_bd_pins xlconstant_3/dout]
   connect_bd_net -net xlslice_Img_Dout [get_bd_pins mult_gen_Img/A] [get_bd_pins mult_gen_Img/B] [get_bd_pins xlslice_Img/Dout]
   connect_bd_net -net xlslice_Real_Dout [get_bd_pins mult_gen_Real/A] [get_bd_pins mult_gen_Real/B] [get_bd_pins xlslice_Real/Dout]
 
