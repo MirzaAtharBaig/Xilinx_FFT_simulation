@@ -1,7 +1,8 @@
 #!/bin/sh
 
+## This script can be used to copy all files of a specific extenstion present in a directory and it's sub directories 
 
-## Directory containing required file
+## Directory containing required files
 FROM="<source directory>"
 
 ## Directory where the files will be copied
